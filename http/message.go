@@ -30,8 +30,8 @@ type Client struct {
 }
 
 type ClientTextMessage struct {
-	ClientID   int64  `json:"clientID"`
-	ClientName string `json:"clientName"`
+	ClientID   int64  `json:"id"`
+	ClientName string `json:"name"`
 	Text       string `json:"text"`
 }
 
@@ -47,13 +47,21 @@ var upgrader = websocket.Upgrader{
 }
 
 func (m messageHttpModule) handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	log.Println("here")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("[handleWebSocket] Error Upgrade", err)
 		return
 	}
 
-	client := &Client{conn: conn}
+	ctx := r.Context()
+	user := ctx.Value("user").(entities.User)
+
+	log.Println("here2")
+	log.Println(user)
+
+	client := &Client{conn: conn, User: user}
+
 	m.addClient(client)
 	defer m.removeClient(client)
 
@@ -85,6 +93,9 @@ func (m messageHttpModule) handleMessage(sender *Client, message entities.Messag
 	// Process the received message here (e.g., handle commands, etc.)
 	// For simplicity, we just broadcast the message to all connected clients.
 
+	log.Println(sender.ID)
+	log.Println(sender.Name)
+
 	broadcast <- ClientTextMessage{
 		ClientID:   sender.ID,
 		ClientName: sender.Name,
@@ -95,6 +106,7 @@ func (m messageHttpModule) handleMessage(sender *Client, message entities.Messag
 func (m messageHttpModule) broadCastMessages() {
 	for {
 		msg := <-broadcast
+		log.Println("msg", msg)
 		for client := range clients {
 			client.mu.Lock()
 			err := client.conn.WriteJSON(msg)

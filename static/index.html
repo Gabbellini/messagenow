@@ -31,12 +31,12 @@
         <input type="submit">
     </fieldset>
 </form>
-<form>
+<form onsubmit="sendMessage(event)">
     <fieldset>
         <legend>Messager</legend>
         <label for="message">Message</label>
         <input type="text" id="message" placeholder="Type your message">
-        <button onclick="sendMessage()">Send</button>
+        <button>Send</button>
     </fieldset>
 </form>
 <div id="chat">
@@ -45,13 +45,15 @@
 
 <script>
     const apiDomain = "localhost:8080"
-    const ws = new WebSocket(`ws://${apiDomain}/ws`);
+    const ws = new WebSocket(`ws://${apiDomain}/api/ws`);
+
+    console.log("ws.OPEN", ws.OPEN)
 
     ws.onmessage = function (event) {
         const msg = JSON.parse(event.data);
         const chatDiv = document.getElementById("chat");
         const messageDiv = document.createElement("div");
-        messageDiv.textContent = msg.senderID + ": " + msg.text;
+        messageDiv.textContent = msg.name + ": " + msg.text;
         chatDiv.appendChild(messageDiv);
     };
 
@@ -90,9 +92,12 @@
     }
 
 
-    function sendMessage() {
+    function sendMessage(e) {
+        e.preventDefault();
         const message = document.getElementById("message").value;
-        ws.send(JSON.stringify({senderID: 4, addresseeID: 5, text: message}));
+        const userString = localStorage.getItem("user");
+        const user = JSON.parse(userString)
+        ws.send(JSON.stringify({id: user.id, name: user.name, text: message}));
         message.value = "";
     }
 </script>
