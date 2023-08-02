@@ -11,5 +11,6 @@ CREATE TABLE IF NOT EXISTS user
     image       TEXT,
     created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    status      TINYINT      NOT NULL DEFAULT 0 REFERENCES user_status (id)
+    status      TINYINT      NOT NULL DEFAULT 0,
+    FOREIGN KEY (status) REFERENCES user_status (id)
 );
