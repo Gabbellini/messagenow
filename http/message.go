@@ -57,9 +57,6 @@ func (m messageHttpModule) handleWebSocket(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	user := ctx.Value("user").(entities.User)
 
-	log.Println("here2")
-	log.Println(user)
-
 	client := &Client{conn: conn, User: user}
 
 	m.addClient(client)
@@ -93,9 +90,6 @@ func (m messageHttpModule) handleMessage(sender *Client, message entities.Messag
 	// Process the received message here (e.g., handle commands, etc.)
 	// For simplicity, we just broadcast the message to all connected clients.
 
-	log.Println(sender.ID)
-	log.Println(sender.Name)
-
 	broadcast <- ClientTextMessage{
 		ClientID:   sender.ID,
 		ClientName: sender.Name,
@@ -106,7 +100,6 @@ func (m messageHttpModule) handleMessage(sender *Client, message entities.Messag
 func (m messageHttpModule) broadCastMessages() {
 	for {
 		msg := <-broadcast
-		log.Println("msg", msg)
 		for client := range clients {
 			client.mu.Lock()
 			err := client.conn.WriteJSON(msg)
