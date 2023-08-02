@@ -1,6 +1,8 @@
 package entities
 
 type User struct {
-	Name     string  `json:"name"`
-	ImageURL *string `json:"image"`
+	ID         int64      `json:"id"`
+	Name       string     `json:"name"`
+	ImageURL   *string    `json:"image"`
+	Credential Credential `json:"-"`
 }

@@ -10,4 +10,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/felixge/httpsnoop v1.0.1 // indirect
+require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/felixge/httpsnoop v1.0.1 // indirect
+	golang.org/x/crypto v0.11.0 // indirect
+)
