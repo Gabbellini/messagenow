@@ -8,6 +8,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/securecookie"
 	"log"
 	"messagenow/domain/entities"
 	"messagenow/exceptions"
@@ -16,8 +17,6 @@ import (
 	"messagenow/settings"
 	"messagenow/usecases"
 	"net/http"
-	"os"
-	"strings"
 	"time"
 )
 
@@ -59,7 +58,11 @@ func setupDataBase(settings settings.Settings) (*sql.DB, error) {
 func setupModules(router *mux.Router, db *sql.DB) error {
 	router.Use(rootMiddleware)
 	setupAuthorizationModule(router, db)
-	setupAPIModule(router, db)
+
+	apiRouter := router.PathPrefix("/api").Subrouter()
+	apiRouter.Use(authorizationMiddleware)
+	setupAPIModule(apiRouter, db)
+
 	return nil
 }
 
@@ -70,12 +73,13 @@ func setupAuthorizationModule(router *mux.Router, db *sql.DB) {
 }
 
 func setupAPIModule(router *mux.Router, db *sql.DB) {
-	apiRouter := router.PathPrefix("/api").Subrouter()
-	apiRouter.Use(authorizationMiddleware)
-
 	createTextMessageRepository := repositories.NewCreateTextMessageRepository(db)
 	createTextMessageUseCase := usecases.CreateTextMessageUseCase(createTextMessageRepository)
-	http_pkg.NewMessageHTTPModule(createTextMessageUseCase).Setup(apiRouter)
+	http_pkg.NewMessageHTTPModule(createTextMessageUseCase).Setup(router)
+
+	loginRepository := repositories.NewGetUserRepository(db)
+	loginUseCase := usecases.NewGetUserUseCase(loginRepository)
+	http_pkg.NewUserHTTPModule(loginUseCase).Setup(router)
 }
 
 // rootMiddleware set the response content type for the api as json.
@@ -106,9 +110,24 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		token, err := getTokenFromRequest(r)
+		//Check if the user has the cookie with the token
+		cookie, err := r.Cookie("cookie")
 		if err != nil {
-			log.Println("[authorizationMiddleware] Error getTokenFromRequest", err)
+			if err == http.ErrNoCookie {
+				//If the user doesn't have the cookie, return an error
+				log.Println("[authorizationMiddleware] Error http.ErrNoCookie", err)
+				exceptions.HandleError(w, exceptions.NewUnauthorizedError(exceptions.UnauthorizedMessage))
+				return
+			}
+			//If there is an error, return an error
+			log.Println("[authorizationMiddleware] Error r.Cookie", err)
+			exceptions.HandleError(w, exceptions.NewUnauthorizedError(exceptions.UnauthorizedMessage))
+			return
+		}
+
+		token, err := getTokenFromCookie(cookie)
+		if err != nil {
+			log.Println("[authorizationMiddleware] Error getTokenFromCookie", err)
 			exceptions.HandleError(w, exceptions.NewForbiddenError(exceptions.ForbiddenMessage))
 			return
 		}
@@ -151,25 +170,25 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// getTokenFromRequest get the token from the cookie.
-func getTokenFromRequest(r *http.Request) (*jwt.Token, error) {
-	splitToken := strings.Split(r.Header.Get("Authorization"), "Bearer ")
-	if len(splitToken) != 2 {
-		log.Println("[getTokenFromRequest] Error len(splitToken) == 0")
-		return nil, errors.New("error Authorization Bearer not valid")
+func getTokenFromCookie(cookie *http.Cookie) (*jwt.Token, error) {
+	secureCookie := securecookie.New([]byte("MESSAGE_NOW_SECRET_KEY"), nil)
+	var tokenString string
+	err := secureCookie.Decode("cookie", cookie.Value, &tokenString)
+	if err != nil {
+		log.Println("[login] Error Decode", err)
+		return nil, err
 	}
-	tokenString := splitToken[1]
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
-			log.Println("[getTokenFromRequest] token.Method.(*jwt.SigningMethodHMAC) !ok")
+			log.Println("[login] token.Method.(*jwt.SigningMethodHMAC) !ok", err)
 			return nil, errors.New("error parsing token")
 		}
-		return []byte(os.Getenv("MESSAGE_NOW_SECRET_KEY")), nil
+		return []byte("MESSAGE_NOW_SECRET_KEY"), nil
 	})
 	if err != nil {
-		log.Println("[getTokenFromRequest] Error parsing token", err)
+		log.Println("[isCookieValid] Error parsing token", err)
 		return nil, err
 	}
 

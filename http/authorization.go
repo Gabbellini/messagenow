@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/securecookie"
 	"io"
 	"log"
 	"messagenow/domain/entities"
 	"messagenow/exceptions"
 	"messagenow/usecases"
 	"net/http"
-	"os"
 )
 
 type authorizationHttpModule struct {
@@ -61,17 +61,25 @@ func (m authorizationHttpModule) login(w http.ResponseWriter, r *http.Request) {
 		"user": string(userByte),
 	})
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("MESSAGE_NOW_SECRET_KEY")))
+	tokenString, err := token.SignedString([]byte("MESSAGE_NOW_SECRET_KEY"))
 	if err != nil {
 		log.Println("[login] Error SignedString", err)
 		exceptions.HandleError(w, err)
 		return
 	}
 
-	_, err = w.Write([]byte(tokenString))
+	secureCookie := securecookie.New([]byte("MESSAGE_NOW_SECRET_KEY"), nil)
+	encodedTokenString, err := secureCookie.Encode("cookie", tokenString)
 	if err != nil {
-		log.Println("[login] Error Write", err)
+		log.Println("[login] Error Encode", err)
 		exceptions.HandleError(w, err)
 		return
 	}
+
+	cookie := &http.Cookie{
+		Name:  "cookie",
+		Value: encodedTokenString,
+	}
+
+	http.SetCookie(w, cookie)
 }

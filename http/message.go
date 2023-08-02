@@ -24,13 +24,20 @@ func (m messageHttpModule) Setup(router *mux.Router) {
 }
 
 type Client struct {
+	entities.User
 	conn *websocket.Conn
 	mu   sync.Mutex
 }
 
+type ClientTextMessage struct {
+	ClientID   int64  `json:"clientID"`
+	ClientName string `json:"clientName"`
+	Text       string `json:"text"`
+}
+
 var (
 	clients   = make(map[*Client]bool)
-	broadcast = make(chan entities.MessageText)
+	broadcast = make(chan ClientTextMessage)
 )
 
 var upgrader = websocket.Upgrader{
@@ -78,7 +85,11 @@ func (m messageHttpModule) handleMessage(sender *Client, message entities.Messag
 	// Process the received message here (e.g., handle commands, etc.)
 	// For simplicity, we just broadcast the message to all connected clients.
 
-	broadcast <- message
+	broadcast <- ClientTextMessage{
+		ClientID:   sender.ID,
+		ClientName: sender.Name,
+		Text:       message.Text,
+	}
 }
 
 func (m messageHttpModule) broadCastMessages() {
