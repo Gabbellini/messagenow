@@ -1,13 +1,13 @@
 package http
 
 import (
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"log"
 	"messagenow/domain/entities"
 	"messagenow/usecases"
 	"net/http"
+	"sync"
 )
 
 type messageHttpModule struct {
@@ -19,51 +19,78 @@ func NewMessageHTTPModule(createTextMessage usecases.CreateTextMessageUseCase) M
 }
 
 func (m messageHttpModule) Setup(router *mux.Router) {
-	router.HandleFunc("/message/{userID}", m.messageHandler)
+	router.HandleFunc("/ws", m.handleWebSocket)
+	go m.broadCastMessages()
 }
+
+type Client struct {
+	conn *websocket.Conn
+	mu   sync.Mutex
+}
+
+var (
+	clients   = make(map[*Client]bool)
+	broadcast = make(chan entities.MessageText)
+)
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		// Allow any origin for the WebSocket connection (for demo purposes)
 		return true
 	},
 }
 
-func (m messageHttpModule) messageHandler(w http.ResponseWriter, r *http.Request) {
+func (m messageHttpModule) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("Error upgrading connection:", err)
+		log.Println("[handleWebSocket] Error Upgrade", err)
 		return
 	}
-	defer conn.Close()
 
+	client := &Client{conn: conn}
+	m.addClient(client)
+	defer m.removeClient(client)
+
+	var message entities.MessageText
 	for {
-		// Read message from the WebSocket client
-		_, message, err := conn.ReadMessage()
+		err = client.conn.ReadJSON(&message)
 		if err != nil {
-			log.Println("Error reading message:", err)
-			break
-		}
-
-		// Print the received message to the console
-		fmt.Printf("Received message: %s\n", message)
-
-		userID := int64(4)
-		senderID := userID
-		addresseeID := int64(5)
-
-		err = m.createTextMessage.Execute(r.Context(), entities.MessageText{Text: string(message)}, senderID, addresseeID)
-		if err != nil {
-			log.Println("[messageHandler] Error createTextMessage.Execute", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Println("[handleWebSocket] Error ReadJSON", err)
 			return
 		}
 
-		// Respond back to the WebSocket client with the same message
-		err = conn.WriteMessage(websocket.TextMessage, message)
-		if err != nil {
-			log.Println("Error writing message:", err)
-			break
+		m.handleMessage(client, message)
+	}
+}
+
+func (m messageHttpModule) addClient(client *Client) {
+	client.mu.Lock()
+	clients[client] = true
+	client.mu.Unlock()
+}
+
+func (m messageHttpModule) removeClient(client *Client) {
+	client.mu.Lock()
+	delete(clients, client)
+	client.mu.Unlock()
+}
+
+func (m messageHttpModule) handleMessage(sender *Client, message entities.MessageText) {
+	// Process the received message here (e.g., handle commands, etc.)
+	// For simplicity, we just broadcast the message to all connected clients.
+
+	broadcast <- message
+}
+
+func (m messageHttpModule) broadCastMessages() {
+	for {
+		msg := <-broadcast
+		for client := range clients {
+			client.mu.Lock()
+			err := client.conn.WriteJSON(msg)
+			client.mu.Unlock()
+			if err != nil {
+				log.Println("Error broadcasting message:", err)
+			}
 		}
 	}
 }
