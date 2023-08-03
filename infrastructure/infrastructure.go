@@ -12,10 +12,10 @@ import (
 	"log"
 	"messagenow/domain/entities"
 	"messagenow/exceptions"
-	http_pkg "messagenow/http"
 	"messagenow/repositories"
 	"messagenow/settings"
 	"messagenow/usecases"
+	http_pkg "messagenow/views"
 	"net/http"
 	"time"
 )
@@ -73,13 +73,20 @@ func setupAuthorizationModule(router *mux.Router, db *sql.DB) {
 }
 
 func setupAPIModule(router *mux.Router, db *sql.DB) {
-	createTextMessageRepository := repositories.NewCreateTextMessageRepository(db)
-	createTextMessageUseCase := usecases.CreateTextMessageUseCase(createTextMessageRepository)
+	createMessageRepository := repositories.NewCreateMessageRepository(db)
+	getMessagesRepository := repositories.NewGetMessagesRepository(db)
+	createRoomRepository := repositories.NewCreateRoomRepository(db)
+	getRoomRepository := repositories.NewGetRoomRepository(db)
 
-	getPreviousMessagesRepository := repositories.NewGetPreviousMessagesRepository(db)
-	getPreviousMessagesUseCase := usecases.GetPreviousMessagesUseCase(getPreviousMessagesRepository)
+	createRoomUseCase := usecases.NewCreateRoomUseCase(createRoomRepository)
+	createMessageUseCase := usecases.NewCreateMessageUseCase(createMessageRepository, getRoomRepository)
+	getMessagesUseCase := usecases.NewGetMessagesUseCase(getMessagesRepository)
 
-	http_pkg.NewMessageHTTPModule(createTextMessageUseCase, getPreviousMessagesUseCase).Setup(router)
+	http_pkg.NewMessageHTTPModule(
+		createMessageUseCase,
+		getMessagesUseCase,
+		createRoomUseCase,
+	).Setup(router)
 
 	loginRepository := repositories.NewGetUserRepository(db)
 	loginUseCase := usecases.NewGetUserUseCase(loginRepository)
@@ -94,6 +101,9 @@ func rootMiddleware(next http.Handler) http.Handler {
 
 		//Set the valid methods to all.
 		w.Header().Set("Access-Control-Allow-Methods", "*")
+
+		//Set content type to JSON
+		w.Header().Set("Content-Type", "application/json")
 
 		//Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
@@ -119,7 +129,7 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 		if err != nil {
 			if err == http.ErrNoCookie {
 				//If the user doesn't have the cookie, return an error
-				log.Println("[authorizationMiddleware] Error http.ErrNoCookie", err)
+				log.Println("[authorizationMiddleware] Error views.ErrNoCookie", err)
 				exceptions.HandleError(w, exceptions.NewUnauthorizedError(exceptions.UnauthorizedMessage))
 				return
 			}

@@ -1,9 +1,10 @@
-package http
+package views
 
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"io"
 	"log"
 	"messagenow/domain/entities"
 	"messagenow/exceptions"
@@ -14,24 +15,61 @@ import (
 )
 
 type messageHttpModule struct {
-	createTextMessageUseCase   usecases.CreateTextMessageUseCase
-	getPreviousMessagesUseCase usecases.GetPreviousMessagesUseCase
+	createTextMessageUseCase   usecases.CreateMessageUseCase
+	getPreviousMessagesUseCase usecases.GetMessagesUseCase
+	createRoomUseCase          usecases.CreateRoomUseCase
 }
 
 func NewMessageHTTPModule(
-	createTextMessageUseCase usecases.CreateTextMessageUseCase,
-	getPreviousMessagesUseCase usecases.GetPreviousMessagesUseCase,
+	createTextMessageUseCase usecases.CreateMessageUseCase,
+	getPreviousMessagesUseCase usecases.GetMessagesUseCase,
+	createRoomUseCase usecases.CreateRoomUseCase,
 ) ModuleHTTP {
 	return messageHttpModule{
 		createTextMessageUseCase:   createTextMessageUseCase,
 		getPreviousMessagesUseCase: getPreviousMessagesUseCase,
+		createRoomUseCase:          createRoomUseCase,
 	}
 }
 
 func (m messageHttpModule) Setup(router *mux.Router) {
-	router.HandleFunc("/ws", m.handleWebSocket)
-	router.HandleFunc("/messages/{roomID}", m.getPreviousMessages)
+	router.HandleFunc("/rooms", m.createRoom).Methods(http.MethodPost)
+	router.HandleFunc("/rooms/{roomID}/messages", m.getPreviousMessages).Methods(http.MethodGet)
+	router.HandleFunc("/rooms/{roomID}/ws", m.handleWebSocket)
 	go m.broadCastMessages()
+}
+
+func (m messageHttpModule) createRoom(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user := ctx.Value("user").(entities.User)
+
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Println("[createRoom] Error ReadAll", err)
+		exceptions.HandleError(w, exceptions.NewBadRequestError("Invalid body"))
+		return
+	}
+
+	addresseeID, err := strconv.ParseInt(string(b), 10, 64)
+	if err != nil {
+		log.Println("[createRoom] Error ParseInt", err)
+		exceptions.HandleError(w, exceptions.NewBadRequestError("addresseeID is not valid"))
+		return
+	}
+
+	room, err := m.createRoomUseCase.Execute(ctx, user.ID, addresseeID)
+	if err != nil {
+		log.Println("[getPreviousMessages] Error Execute", err)
+		exceptions.HandleError(w, err)
+		return
+	}
+
+	_, err = w.Write([]byte(strconv.FormatInt(room.ID, 10)))
+	if err != nil {
+		log.Println("[getPreviousMessages] Error Write", err)
+		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))
+		return
+	}
 }
 
 type Client struct {
@@ -40,7 +78,8 @@ type Client struct {
 	mu   sync.Mutex
 }
 
-type ClientTextMessage struct {
+type ClientMessage struct {
+	RoomID     int64  `json:"roomID"`
 	ClientID   int64  `json:"id"`
 	ClientName string `json:"name"`
 	Text       string `json:"text"`
@@ -48,7 +87,7 @@ type ClientTextMessage struct {
 
 var (
 	clients   = make(map[*Client]bool)
-	broadcast = make(chan ClientTextMessage)
+	broadcast = make(chan ClientMessage)
 )
 
 var upgrader = websocket.Upgrader{
@@ -104,7 +143,7 @@ func (m messageHttpModule) handleMessage(sender *Client, message entities.Messag
 	// Process the received message here (e.g., handle commands, etc.)
 	// For simplicity, we just broadcast the message to all connected clients.
 
-	broadcast <- ClientTextMessage{
+	broadcast <- ClientMessage{
 		ClientID:   sender.ID,
 		ClientName: sender.Name,
 		Text:       message.Text,
@@ -121,16 +160,23 @@ func (m messageHttpModule) broadCastMessages() {
 			if err != nil {
 				log.Println("Error broadcasting message:", err)
 			}
-			err = m.createTextMessageUseCase.Execute(entities.Message{Text: clientMessage.Text}, clientMessage.ClientID, addressee.ID)
+
+			err = m.createTextMessageUseCase.Execute(
+				clientMessage.RoomID,
+				clientMessage.ClientID,
+				addressee.ID,
+				entities.Message{Text: clientMessage.Text},
+			)
 			if err != nil {
 				log.Println("[broadCastMessages] Error createTextMessageUseCase.Execute", err)
 			}
+
 		}
 	}
 }
 
 func (m messageHttpModule) getPreviousMessages(w http.ResponseWriter, r *http.Request) {
-	roomID, err := strconv.ParseInt(mux.Vars(r)["roomID"], 64, 10)
+	roomID, err := strconv.ParseInt(mux.Vars(r)["roomID"], 10, 64)
 	if err != nil {
 		log.Println("[getPreviousMessages] Error ParseInt", err)
 		exceptions.HandleError(w, exceptions.NewBadRequestError("clientID is not valid"))

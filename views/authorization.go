@@ -1,4 +1,4 @@
-package http
+package views
 
 import (
 	"encoding/json"

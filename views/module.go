@@ -1,4 +1,4 @@
-package http
+package views
 
 import "github.com/gorilla/mux"
 

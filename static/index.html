@@ -8,7 +8,7 @@
             flex-direction: column;
             gap: 1rem;
         }
-        
+
         * {
             border-color: #fff;
             color: #fff;
@@ -19,6 +19,25 @@
             display: flex;
             flex-direction: column;
             max-width: 600px;
+            gap: 0.5rem;
+        }
+
+        ul {
+            padding: 0;
+        }
+
+        li {
+            display: flex;
+            flex-direction: column;
+            max-width: 600px;
+            border: 1px solid;
+            padding: 0.5rem;
+            box-sizing: border-box;
+        }
+
+        li > div {
+            display: flex;
+            align-items: center;
             gap: 0.5rem;
         }
     </style>
@@ -45,43 +64,82 @@
         <button>Send</button>
     </fieldset>
 </form>
+
 <div id="chat">
+    <ul>
+
+    </ul>
 </div>
 
-
 <script>
+
+    const getMessages = async () => {
+        try {
+            const response = await fetch(`http://${apiDomain}/api/messages/${1}`, {
+                method: "GET",
+                headers: {
+                    "credentials": "same-origin",
+                    "Content-Type": "application/json"
+                }
+            });
+
+            return await response.json();
+        } catch (e) {
+            console.log("[loadMessages] Error ", e)
+        }
+    }
+
+    const insertMessagesOnUsersList = (messages) => {
+        const listElement =  document.getElementById("chat").querySelector("ul");
+        for (const msg of messages) {
+            console.log(msg)
+            const item = document.createElement("li");
+
+            const header = document.createElement("div");
+
+            const image = document.createElement("img")
+            image.style = 'width: 30px; height: 30px';
+            image.src = msg.sender.image;
+
+            const userName = document.createElement("h4")
+            userName.innerText = msg.sender.name;
+
+            const message = document.createElement("p")
+            message.innerText = msg.text;
+
+            header.appendChild(image);
+            header.appendChild(userName);
+            item.append(header);
+            item.append(message);
+
+            listElement.appendChild(item)
+        }
+    };
+
     const apiDomain = "localhost:8080"
     let ws = new WebSocket(`ws://${apiDomain}/api/ws`);
 
-    console.log("ws.OPEN", ws.OPEN)
-
     ws.onmessage = function (event) {
         const msg = JSON.parse(event.data);
-        const chatDiv = document.getElementById("chat");
-        const messageDiv = document.createElement("div");
-        messageDiv.textContent = msg.name + ": " + msg.text;
-        chatDiv.appendChild(messageDiv);
+        insertMessagesOnUsersList([msg]);
     };
 
     async function login(event) {
         try {
-            console.log(event)
             event.preventDefault();
 
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
 
-            let response = await fetch(`http://${apiDomain}/login`, {
+            await fetch(`http://${apiDomain}/login`, {
                 method: "POST",
                 body: JSON.stringify({email: email, password: password})
             });
 
-            console.log("response.ok", response.ok)
-
             email.value = "";
             password.value = "";
 
-            response = await fetch(`http://${apiDomain}/api/me`, {
+            const response = await fetch(`http://${apiDomain}/api/me`, {
                 method: "GET",
                 headers: {
                     "credentials": "same-origin",
@@ -92,8 +150,13 @@
             const user = await response.json()
             localStorage.setItem("user", JSON.stringify(user))
 
+            const messages = await getMessages();
+            console.log(messages)
+
+            insertMessagesOnUsersList(messages);
+
         } catch (e) {
-            console.log(e);
+            console.log("[login] Error ", e);
         }
     }
 
@@ -101,8 +164,6 @@
     function sendMessage(e) {
         e.preventDefault();
         const message = document.getElementById("message").value;
-        const userString = localStorage.getItem("user");
-        const user = JSON.parse(userString)
         ws.send(JSON.stringify({text: message}));
         message.value = "";
     }

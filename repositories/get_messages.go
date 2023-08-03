@@ -5,6 +5,6 @@ import (
 	"messagenow/domain/entities"
 )
 
-type GetPreviousMessagesRepository interface {
+type GetMessagesRepository interface {
 	Execute(ctx context.Context, userID, roomID int64) ([]entities.Message, error)
 }
