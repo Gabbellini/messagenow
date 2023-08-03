@@ -57,10 +57,12 @@ func setupDataBase(settings settings.Settings) (*sql.DB, error) {
 // setupModules set the MVC structure for the application.
 func setupModules(router *mux.Router, db *sql.DB) error {
 	router.Use(rootMiddleware)
-	setupAuthorizationModule(router, db)
 
 	apiRouter := router.PathPrefix("/api").Subrouter()
+	apiRouter.Use(apiMiddleware)
 	apiRouter.Use(authorizationMiddleware)
+
+	setupAuthorizationModule(apiRouter, db)
 	setupAPIModule(apiRouter, db)
 
 	return nil
@@ -105,9 +107,6 @@ func rootMiddleware(next http.Handler) http.Handler {
 		//Set the valid methods to all.
 		w.Header().Set("Access-Control-Allow-Methods", "*")
 
-		//Set content type to JSON
-		w.Header().Set("Content-Type", "application/json")
-
 		//Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
@@ -122,7 +121,8 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if pathTemplate == "/user/login" {
+		log.Println(pathTemplate)
+		if pathTemplate == "/api/login" {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -184,6 +184,16 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 		//Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r.WithContext(ctx))
 
+	})
+}
+
+func apiMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//Set content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		//Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(w, r)
 	})
 }
 
