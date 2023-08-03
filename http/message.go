@@ -11,11 +11,11 @@ import (
 )
 
 type messageHttpModule struct {
-	createTextMessage usecases.CreateTextMessageUseCase
+	createTextMessageUseCase usecases.CreateTextMessageUseCase
 }
 
-func NewMessageHTTPModule(createTextMessage usecases.CreateTextMessageUseCase) ModuleHTTP {
-	return messageHttpModule{createTextMessage: createTextMessage}
+func NewMessageHTTPModule(createTextMessageUseCase usecases.CreateTextMessageUseCase) ModuleHTTP {
+	return messageHttpModule{createTextMessageUseCase: createTextMessageUseCase}
 }
 
 func (m messageHttpModule) Setup(router *mux.Router) {
@@ -47,7 +47,6 @@ var upgrader = websocket.Upgrader{
 }
 
 func (m messageHttpModule) handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	log.Println("here")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("[handleWebSocket] Error Upgrade", err)
@@ -62,14 +61,18 @@ func (m messageHttpModule) handleWebSocket(w http.ResponseWriter, r *http.Reques
 	m.addClient(client)
 	defer m.removeClient(client)
 
+	log.Println("client Connected", client.Name)
+
 	var message entities.MessageText
 	for {
+		// Wait for the JSON message from the client
 		err = client.conn.ReadJSON(&message)
 		if err != nil {
 			log.Println("[handleWebSocket] Error ReadJSON", err)
 			return
 		}
 
+		// handle Message
 		m.handleMessage(client, message)
 	}
 }
@@ -99,13 +102,17 @@ func (m messageHttpModule) handleMessage(sender *Client, message entities.Messag
 
 func (m messageHttpModule) broadCastMessages() {
 	for {
-		msg := <-broadcast
-		for client := range clients {
-			client.mu.Lock()
-			err := client.conn.WriteJSON(msg)
-			client.mu.Unlock()
+		clientMessage := <-broadcast
+		for addressee := range clients {
+			addressee.mu.Lock()
+			err := addressee.conn.WriteJSON(clientMessage)
+			addressee.mu.Unlock()
 			if err != nil {
 				log.Println("Error broadcasting message:", err)
+			}
+			err = m.createTextMessageUseCase.Execute(entities.MessageText{Text: clientMessage.Text}, clientMessage.ClientID, addressee.ID)
+			if err != nil {
+				log.Println("[broadCastMessages] Error createTextMessageUseCase.Execute", err)
 			}
 		}
 	}

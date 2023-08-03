@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"context"
 	"database/sql"
 	"log"
 	"messagenow/domain/entities"
@@ -15,10 +14,10 @@ func NewCreateTextMessageRepository(db *sql.DB) CreateTextMessageRepository {
 	return createTextMessageRepositoryImpl{db: db}
 }
 
-func (c createTextMessageRepositoryImpl) Execute(ctx context.Context, messageText entities.MessageText, senderID int64, addresseeID int64) error {
-	tx, err := c.db.BeginTx(ctx, nil)
+func (c createTextMessageRepositoryImpl) Execute(messageText entities.MessageText, senderID int64, addresseeID int64) error {
+	tx, err := c.db.Begin()
 	if err != nil {
-		log.Println("[createTextMessageRepositoryImpl] Error BeginTx", err)
+		log.Println("[createTextMessageRepositoryImpl] Error Begin", err)
 		return err
 	}
 
@@ -26,7 +25,7 @@ func (c createTextMessageRepositoryImpl) Execute(ctx context.Context, messageTex
 	INSERT INTO message (id_user, id_sender, id_addressee) 
 	VALUES (?, ?, ?)`
 
-	result, err := tx.ExecContext(ctx, query)
+	result, err := tx.Exec(query, senderID, senderID, addresseeID)
 	if err != nil {
 		_ = tx.Rollback()
 		log.Println("[createTextMessageRepositoryImpl] Error ExecContext", err)
@@ -44,7 +43,7 @@ func (c createTextMessageRepositoryImpl) Execute(ctx context.Context, messageTex
 	INSERT INTO message_text (id_message, text) 
 	VALUES (?, ?)`
 
-	_, err = tx.ExecContext(ctx, query, messageID, messageText.Text)
+	_, err = tx.Exec(query, messageID, messageText.Text)
 	if err != nil {
 		_ = tx.Rollback()
 		log.Println("[createTextMessageRepositoryImpl] Error ExecContext", err)

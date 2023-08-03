@@ -1,7 +1,6 @@
 package usecases
 
 import (
-	"context"
 	"messagenow/domain/entities"
 	"messagenow/repositories"
 )
@@ -14,6 +13,6 @@ func NewCreateTextMessageUseCase(createTextMessageRepository repositories.Create
 	return createTextMessageUseCaseImpl{createTextMessageRepository: createTextMessageRepository}
 }
 
-func (c createTextMessageUseCaseImpl) Execute(context context.Context, messageText entities.MessageText, senderID int64, addresseeID int64) error {
-	return c.createTextMessageRepository.Execute(context, messageText, senderID, addresseeID)
+func (c createTextMessageUseCaseImpl) Execute(messageText entities.MessageText, senderID int64, addresseeID int64) error {
+	return c.createTextMessageRepository.Execute(messageText, senderID, addresseeID)
 }

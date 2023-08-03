@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS message
 CREATE TABLE message_text
 (
     id         INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    id_message INT     NOT NULL REFERENCES message (id),
-    text       TEXT    NOT NULL
+    id_message INT     NOT NULL,
+    text       TEXT    NOT NULL,
+    FOREIGN KEY (id_message) REFERENCES message(id)
 );

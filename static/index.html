@@ -8,6 +8,12 @@
             flex-direction: column;
             gap: 1rem;
         }
+        
+        * {
+            border-color: #fff;
+            color: #fff;
+            background: #343434;
+        }
 
         fieldset {
             display: flex;
@@ -45,7 +51,7 @@
 
 <script>
     const apiDomain = "localhost:8080"
-    const ws = new WebSocket(`ws://${apiDomain}/api/ws`);
+    let ws = new WebSocket(`ws://${apiDomain}/api/ws`);
 
     console.log("ws.OPEN", ws.OPEN)
 
@@ -97,7 +103,7 @@
         const message = document.getElementById("message").value;
         const userString = localStorage.getItem("user");
         const user = JSON.parse(userString)
-        ws.send(JSON.stringify({id: user.id, name: user.name, text: message}));
+        ws.send(JSON.stringify({text: message}));
         message.value = "";
     }
 </script>
