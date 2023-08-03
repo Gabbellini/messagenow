@@ -14,7 +14,7 @@ func NewCreateTextMessageRepository(db *sql.DB) CreateTextMessageRepository {
 	return createTextMessageRepositoryImpl{db: db}
 }
 
-func (c createTextMessageRepositoryImpl) Execute(messageText entities.MessageText, senderID int64, addresseeID int64) error {
+func (c createTextMessageRepositoryImpl) Execute(Message entities.Message, senderID int64, addresseeID int64) error {
 	tx, err := c.db.Begin()
 	if err != nil {
 		log.Println("[createTextMessageRepositoryImpl] Error Begin", err)
@@ -43,7 +43,7 @@ func (c createTextMessageRepositoryImpl) Execute(messageText entities.MessageTex
 	INSERT INTO message_text (id_message, text) 
 	VALUES (?, ?)`
 
-	_, err = tx.Exec(query, messageID, messageText.Text)
+	_, err = tx.Exec(query, messageID, Message.Text)
 	if err != nil {
 		_ = tx.Rollback()
 		log.Println("[createTextMessageRepositoryImpl] Error ExecContext", err)

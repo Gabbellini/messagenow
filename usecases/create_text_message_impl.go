@@ -13,6 +13,6 @@ func NewCreateTextMessageUseCase(createTextMessageRepository repositories.Create
 	return createTextMessageUseCaseImpl{createTextMessageRepository: createTextMessageRepository}
 }
 
-func (c createTextMessageUseCaseImpl) Execute(messageText entities.MessageText, senderID int64, addresseeID int64) error {
-	return c.createTextMessageRepository.Execute(messageText, senderID, addresseeID)
+func (c createTextMessageUseCaseImpl) Execute(Message entities.Message, senderID int64, addresseeID int64) error {
+	return c.createTextMessageRepository.Execute(Message, senderID, addresseeID)
 }

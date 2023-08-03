@@ -75,7 +75,11 @@ func setupAuthorizationModule(router *mux.Router, db *sql.DB) {
 func setupAPIModule(router *mux.Router, db *sql.DB) {
 	createTextMessageRepository := repositories.NewCreateTextMessageRepository(db)
 	createTextMessageUseCase := usecases.CreateTextMessageUseCase(createTextMessageRepository)
-	http_pkg.NewMessageHTTPModule(createTextMessageUseCase).Setup(router)
+
+	getPreviousMessagesRepository := repositories.NewGetPreviousMessagesRepository(db)
+	getPreviousMessagesUseCase := usecases.GetPreviousMessagesUseCase(getPreviousMessagesRepository)
+
+	http_pkg.NewMessageHTTPModule(createTextMessageUseCase, getPreviousMessagesUseCase).Setup(router)
 
 	loginRepository := repositories.NewGetUserRepository(db)
 	loginUseCase := usecases.NewGetUserUseCase(loginRepository)

@@ -5,5 +5,5 @@ import (
 )
 
 type CreateTextMessageRepository interface {
-	Execute(messageText entities.MessageText, senderID int64, addresseeID int64) error
+	Execute(Message entities.Message, senderID int64, addresseeID int64) error
 }
