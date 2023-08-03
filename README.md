@@ -5,7 +5,7 @@ Webchat developed to improve my skills on real-time protocols, design patterns, 
 
 - [x] Login
 - [x] Broadcast messages to all clients;
-- [ ] Persist messages;
+- [x] Persist messages;
 - [ ] List all chats;
 - [ ] Create chat room;
 - [ ] Show online clients;
