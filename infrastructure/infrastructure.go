@@ -77,8 +77,10 @@ func setupAPIModule(router *mux.Router, db *sql.DB) {
 	getMessagesRepository := repositories.NewGetMessagesRepository(db)
 	createRoomRepository := repositories.NewCreateRoomRepository(db)
 	getRoomRepository := repositories.NewGetRoomRepository(db)
+	joinRoomRepository := repositories.NewJoinRoomRepository(db)
 
 	createRoomUseCase := usecases.NewCreateRoomUseCase(createRoomRepository)
+	joinRoomUseCase := usecases.NewJoinRoomUseCase(joinRoomRepository)
 	createMessageUseCase := usecases.NewCreateMessageUseCase(createMessageRepository, getRoomRepository)
 	getMessagesUseCase := usecases.NewGetMessagesUseCase(getMessagesRepository)
 
@@ -86,6 +88,7 @@ func setupAPIModule(router *mux.Router, db *sql.DB) {
 		createMessageUseCase,
 		getMessagesUseCase,
 		createRoomUseCase,
+		joinRoomUseCase,
 	).Setup(router)
 
 	loginRepository := repositories.NewGetUserRepository(db)

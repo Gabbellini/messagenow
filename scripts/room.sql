@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS user_room
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (id_user) REFERENCES user (id),
-    FOREIGN KEY (id_room) REFERENCES room (id)
+    FOREIGN KEY (id_room) REFERENCES room (id),
+    UNIQUE (id_room, id_user)
 );
 
 CREATE TABLE IF NOT EXISTS message
@@ -27,7 +28,7 @@ CREATE TABLE IF NOT EXISTS message
     modified_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (id_room) REFERENCES room (id),
     FOREIGN KEY (id_sender) REFERENCES user (id),
-    FOREIGN KEY (id_addressee) REFERENCES user (id)
+    FOREIGN KEY (id_addressee) REFERENCES user (id),
 );
 
 INSERT INTO room (id) VALUES (id);
