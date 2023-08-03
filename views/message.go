@@ -15,7 +15,7 @@ import (
 )
 
 type messageHttpModule struct {
-	createTextMessageUseCase   usecases.CreateMessageUseCase
+	createMessageUseCase       usecases.CreateMessageUseCase
 	getPreviousMessagesUseCase usecases.GetMessagesUseCase
 	createRoomUseCase          usecases.CreateRoomUseCase
 	joinRoomUseCase            usecases.JoinRoomUseCase
@@ -28,7 +28,7 @@ func NewMessageHTTPModule(
 	joinRoomUseCase usecases.JoinRoomUseCase,
 ) ModuleHTTP {
 	return messageHttpModule{
-		createTextMessageUseCase:   createTextMessageUseCase,
+		createMessageUseCase:       createTextMessageUseCase,
 		getPreviousMessagesUseCase: getPreviousMessagesUseCase,
 		createRoomUseCase:          createRoomUseCase,
 		joinRoomUseCase:            joinRoomUseCase,
@@ -142,7 +142,7 @@ type ClientMessage struct {
 }
 
 var (
-	clients   = make(map[*Client]bool)
+	rooms     = make(map[int64]map[*Client]bool)
 	broadcast = make(chan ClientMessage)
 )
 
@@ -162,14 +162,21 @@ func (m messageHttpModule) handleWebSocket(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	user := ctx.Value("user").(entities.User)
 
+	roomID, err := strconv.ParseInt(mux.Vars(r)["roomID"], 10, 64)
+	if err != nil {
+		log.Println("[handleWebSocket] Error ParseInt", err)
+		exceptions.HandleError(w, exceptions.NewBadRequestError("roomID is not valid"))
+		return
+	}
+
 	client := &Client{conn: conn, User: user}
 
-	m.addClient(client)
-	defer m.removeClient(client)
+	m.addClient(roomID, client)
+	defer m.removeClient(roomID, client)
 
 	log.Println("client Connected", client.Name)
 
-	var message entities.Message
+	var message ClientMessage
 	for {
 		// Wait for the JSON message from the client
 		err = client.conn.ReadJSON(&message)
@@ -179,29 +186,32 @@ func (m messageHttpModule) handleWebSocket(w http.ResponseWriter, r *http.Reques
 		}
 
 		// handle Message
-		m.handleMessage(client, message)
+		m.handleMessage(client, roomID, message)
 	}
 }
 
-func (m messageHttpModule) addClient(client *Client) {
+func (m messageHttpModule) addClient(id int64, client *Client) {
 	client.mu.Lock()
+	clients := rooms[id]
 	clients[client] = true
 	client.mu.Unlock()
 }
 
-func (m messageHttpModule) removeClient(client *Client) {
+func (m messageHttpModule) removeClient(id int64, client *Client) {
 	client.mu.Lock()
+	clients := rooms[id]
 	delete(clients, client)
 	client.mu.Unlock()
 }
 
-func (m messageHttpModule) handleMessage(sender *Client, message entities.Message) {
+func (m messageHttpModule) handleMessage(sender *Client, roomID int64, message ClientMessage) {
 	// Process the received message here (e.g., handle commands, etc.)
 	// For simplicity, we just broadcast the message to all connected clients.
 
 	broadcast <- ClientMessage{
 		ClientID:   sender.ID,
 		ClientName: sender.Name,
+		RoomID:     roomID,
 		Text:       message.Text,
 	}
 }
@@ -209,7 +219,7 @@ func (m messageHttpModule) handleMessage(sender *Client, message entities.Messag
 func (m messageHttpModule) broadCastMessages() {
 	for {
 		clientMessage := <-broadcast
-		for addressee := range clients {
+		for addressee := range rooms[clientMessage.RoomID] {
 			addressee.mu.Lock()
 			err := addressee.conn.WriteJSON(clientMessage)
 			addressee.mu.Unlock()
@@ -217,14 +227,13 @@ func (m messageHttpModule) broadCastMessages() {
 				log.Println("Error broadcasting message:", err)
 			}
 
-			err = m.createTextMessageUseCase.Execute(
-				clientMessage.RoomID,
+			err = m.createMessageUseCase.Execute(
 				clientMessage.ClientID,
-				addressee.ID,
+				clientMessage.RoomID,
 				entities.Message{Text: clientMessage.Text},
 			)
 			if err != nil {
-				log.Println("[broadCastMessages] Error createTextMessageUseCase.Execute", err)
+				log.Println("[broadCastMessages] Error createMessageUseCase.Execute", err)
 			}
 
 		}

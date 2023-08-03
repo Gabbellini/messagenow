@@ -12,15 +12,18 @@ type createMessageUseCaseImpl struct {
 	getRoomByID             repositories.GetRoomRepository
 }
 
-func NewCreateMessageUseCase(createMessageRepository repositories.CreateMessageRepository, getRoomRepository repositories.GetRoomRepository) CreateMessageUseCase {
+func NewCreateMessageUseCase(
+	createMessageRepository repositories.CreateMessageRepository,
+	getRoomRepository repositories.GetRoomRepository,
+) CreateMessageUseCase {
 	return createMessageUseCaseImpl{
 		createMessageRepository: createMessageRepository,
 		getRoomByID:             getRoomRepository,
 	}
 }
 
-func (c createMessageUseCaseImpl) Execute(roomID, senderID, addresseeID int64, message entities.Message) error {
-	room, err := c.getRoomByID.Execute(roomID, addresseeID)
+func (c createMessageUseCaseImpl) Execute(senderID, roomID int64, message entities.Message) error {
+	room, err := c.getRoomByID.Execute(roomID, senderID)
 	if err != nil {
 		log.Println("[createMessageUseCaseImpl] Error getRoomByID")
 		return err
@@ -30,5 +33,5 @@ func (c createMessageUseCaseImpl) Execute(roomID, senderID, addresseeID int64, m
 		return exceptions.NewUnauthorizedError(exceptions.UnauthorizedMessage)
 	}
 
-	return c.createMessageRepository.Execute(roomID, senderID, addresseeID, message)
+	return c.createMessageRepository.Execute(roomID, senderID, message)
 }

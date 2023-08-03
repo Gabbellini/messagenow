@@ -21,19 +21,15 @@ func NewGetMessagesRepository(db *sql.DB) GetMessagesRepository {
 func (g getMessagesRepositoryImpl) Execute(ctx context.Context, userID, roomID int64) ([]entities.Message, error) {
 	//language=sql
 	query := `
-	SELECT u_sender.id, 
-	       u_sender.name, 
-	       u_sender.image,
-	       u_addressee.id, 
-	       u_addressee.name, 
-	       u_addressee.image,
-	       m.text
+	SELECT u.id, 
+		   u.name, 
+		   u.image,
+		   m.text
 	FROM message m
-	         INNER JOIN room r on m.id_room = r.id
-	         INNER JOIN user_room ur on r.id = ur.id_room AND ur.id_user = ?
-			 INNER JOIN user u_sender on m.id_sender = u_sender.id
-			 INNER JOIN user u_addressee on m.id_addressee = u_addressee.id
- 	WHERE m.id_room = ?`
+			 INNER JOIN room r on m.id_room = r.id
+			 INNER JOIN user_room ur on r.id = ur.id_room AND ur.id_user = ?
+			 INNER JOIN user u on u.id = m.id_user
+	WHERE m.id_room = ?`
 
 	rows, err := g.db.QueryContext(ctx, query, userID, roomID)
 	if err != nil {
@@ -48,10 +44,7 @@ func (g getMessagesRepositoryImpl) Execute(ctx context.Context, userID, roomID i
 		err = rows.Scan(
 			&message.Sender.ID,
 			&message.Sender.Name,
-			&message.Sender.Image,
-			&message.Addressee.ID,
-			&message.Addressee.Name,
-			&message.Addressee.Image,
+			&message.Sender.ImageURL,
 			&message.Text,
 		)
 		if err != nil {
