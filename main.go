@@ -27,7 +27,9 @@ func main() {
 
 	server := &http.Server{
 		Handler: handlers.CORS(
-			handlers.AllowedOrigins([]string{"*"}),
+			handlers.AllowedOriginValidator(func(s string) bool {
+				return true
+			}),
 			handlers.AllowedHeaders([]string{"Authorization", "Content-Type", "Accept"}),
 			handlers.AllowedMethods([]string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodHead}),
 			handlers.AllowCredentials(),

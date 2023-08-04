@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkmessagenow_frontend"]=self["webpackChunkmessagenow_frontend"]||[]).push([[822],{9822:function(n,e,s){s.r(e),s.d(e,{default:function(){return d}});var t=s(3396);const a={class:"about"},r=(0,t._)("h1",null,"This is an about page",-1),u=[r];function o(n,e){return(0,t.wg)(),(0,t.iD)("div",a,u)}var c=s(89);const f={},i=(0,c.Z)(f,[["render",o]]);var d=i}}]);
+//# sourceMappingURL=822.8755d5c0.js.map

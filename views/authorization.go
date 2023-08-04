@@ -82,4 +82,18 @@ func (m authorizationHttpModule) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, cookie)
+
+	b, err = json.Marshal(user)
+	if err != nil {
+		log.Println("[login] Error Marshal", err)
+		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))
+		return
+	}
+
+	_, err = w.Write(b)
+	if err != nil {
+		log.Println("[login] Error Write", err)
+		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))
+		return
+	}
 }
