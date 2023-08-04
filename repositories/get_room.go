@@ -5,5 +5,5 @@ import (
 )
 
 type GetRoomRepository interface {
-	Execute(roomID int64, addreseeID int64) (*entities.Room, error)
+	Execute(roomID int64, senderID int64) (*entities.Room, error)
 }

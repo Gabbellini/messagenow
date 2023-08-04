@@ -17,18 +17,17 @@ func NewGetRoomRepository(db *sql.DB) GetRoomRepository {
 	}
 }
 
-func (g getRoomRepositoryImpl) Execute(roomID int64, addresseeID int64) (*entities.Room, error) {
+func (g getRoomRepositoryImpl) Execute(roomID int64, senderID int64) (*entities.Room, error) {
 	//language=sql
 	query := `
 	SELECT id
-	FROM room 
-		INNER JOIN user_room ur1 on ur1.id_room = room.id AND 
+	FROM room r
+		INNER JOIN user_room ur1 on ur1.id_room = r.id AND 
 								   ur1.id_user = ?
-		INNER JOIN user_room ur2 on ur2.id_room = room.id AND 
-						   ur2.id_user = ?`
+   WHERE r.id = ?`
 
 	var room entities.Room
-	err := g.db.QueryRow(query, roomID, addresseeID).Scan(&room.ID)
+	err := g.db.QueryRow(query, roomID, senderID).Scan(&room.ID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		log.Println("[getRoomRepositoryImpl] Error Scan", err)
 		return nil, err

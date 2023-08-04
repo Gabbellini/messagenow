@@ -16,6 +16,6 @@ func NewCreateRoomUseCase(createRoomRepository repositories.CreateRoomRepository
 	}
 }
 
-func (c createRoomUseCasesImpl) Execute(ctx context.Context, userID int64, addresseeID int64) (*entities.Room, error) {
-	return c.createRoomRepository.Execute(ctx, userID, addresseeID)
+func (c createRoomUseCasesImpl) Execute(ctx context.Context) (*entities.Room, error) {
+	return c.createRoomRepository.Execute(ctx)
 }

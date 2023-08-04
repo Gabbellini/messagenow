@@ -78,6 +78,7 @@ func setupAPIModule(router *mux.Router, db *sql.DB) {
 	createMessageRepository := repositories.NewCreateMessageRepository(db)
 	getMessagesRepository := repositories.NewGetMessagesRepository(db)
 	createRoomRepository := repositories.NewCreateRoomRepository(db)
+	getRoomsRepository := repositories.NewGetRoomsRepository(db)
 	getRoomRepository := repositories.NewGetRoomRepository(db)
 	joinRoomRepository := repositories.NewJoinRoomRepository(db)
 
@@ -85,12 +86,14 @@ func setupAPIModule(router *mux.Router, db *sql.DB) {
 	joinRoomUseCase := usecases.NewJoinRoomUseCase(joinRoomRepository)
 	createMessageUseCase := usecases.NewCreateMessageUseCase(createMessageRepository, getRoomRepository)
 	getMessagesUseCase := usecases.NewGetMessagesUseCase(getMessagesRepository)
+	getRoomsUseCase := usecases.NewGetRoomsUseCase(getRoomsRepository)
 
 	http_pkg.NewMessageHTTPModule(
 		createMessageUseCase,
 		getMessagesUseCase,
 		createRoomUseCase,
 		joinRoomUseCase,
+		getRoomsUseCase,
 	).Setup(router)
 
 	loginRepository := repositories.NewGetUserRepository(db)
@@ -191,6 +194,9 @@ func apiMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//Set content type to JSON
 		w.Header().Set("Content-Type", "application/json")
+
+		//Set content type to JSON
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8081")
 
 		//Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
