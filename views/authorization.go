@@ -79,6 +79,7 @@ func (m authorizationHttpModule) login(w http.ResponseWriter, r *http.Request) {
 	cookie := &http.Cookie{
 		Name:  "cookie",
 		Value: encodedTokenString,
+		Path:  "/",
 	}
 
 	http.SetCookie(w, cookie)

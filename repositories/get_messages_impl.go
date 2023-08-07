@@ -24,12 +24,14 @@ func (g getMessagesRepositoryImpl) Execute(ctx context.Context, userID, roomID i
 	SELECT u.id, 
 		   u.name, 
 		   u.image,
-		   m.text
+		   m.text,
+		   m.created_at
 	FROM message m
 			 INNER JOIN room r on m.id_room = r.id
 			 INNER JOIN user_room ur on r.id = ur.id_room AND ur.id_user = ?
 			 INNER JOIN user u on u.id = m.id_user
-	WHERE m.id_room = ?`
+	WHERE m.id_room = ?
+	ORDER BY created_at`
 
 	rows, err := g.db.QueryContext(ctx, query, userID, roomID)
 	if err != nil {
@@ -46,6 +48,7 @@ func (g getMessagesRepositoryImpl) Execute(ctx context.Context, userID, roomID i
 			&message.Sender.Name,
 			&message.Sender.ImageURL,
 			&message.Text,
+			&message.CreatedAt,
 		)
 		if err != nil {
 			log.Println("[getMessagesRepositoryImpl] Error ExecContext", err)

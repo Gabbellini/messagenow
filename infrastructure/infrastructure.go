@@ -145,12 +145,16 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		log.Println("cookie", cookie)
+
 		token, err := getTokenFromCookie(cookie)
 		if err != nil {
 			log.Println("[authorizationMiddleware] Error getTokenFromCookie", err)
 			exceptions.HandleError(w, exceptions.NewForbiddenError(exceptions.ForbiddenMessage))
 			return
 		}
+
+		log.Println("token", token)
 
 		//Check if the token is valid
 		if !token.Valid {
@@ -194,9 +198,6 @@ func apiMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//Set content type to JSON
 		w.Header().Set("Content-Type", "application/json")
-
-		//Set content type to JSON
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8081")
 
 		//Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
