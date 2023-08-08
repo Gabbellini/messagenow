@@ -56,14 +56,13 @@ func setupDataBase(settings settings.Settings) (*sql.DB, error) {
 
 // setupModules set the MVC structure for the application.
 func setupModules(router *mux.Router, db *sql.DB) error {
-	router.Use(rootMiddleware)
-
 	apiRouter := router.PathPrefix("/api").Subrouter()
 	apiRouter.Use(apiMiddleware)
 	apiRouter.Use(authorizationMiddleware)
 
 	setupAuthorizationModule(apiRouter, db)
 	setupAPIModule(apiRouter, db)
+	http_pkg.NewPWAWebModule("/static", "./static").Setup(router)
 
 	return nil
 }
@@ -101,20 +100,6 @@ func setupAPIModule(router *mux.Router, db *sql.DB) {
 	http_pkg.NewUserHTTPModule(loginUseCase).Setup(router)
 }
 
-// rootMiddleware set the response content type for the api as json.
-func rootMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//Set the origin to allow all.
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-
-		//Set the valid methods to all.
-		w.Header().Set("Access-Control-Allow-Methods", "*")
-
-		//Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
-}
-
 func authorizationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		pathTemplate, err := mux.CurrentRoute(r).GetPathTemplate()
@@ -145,17 +130,13 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Println("cookie", cookie)
-
 		token, err := getTokenFromCookie(cookie)
 		if err != nil {
 			log.Println("[authorizationMiddleware] Error getTokenFromCookie", err)
 			exceptions.HandleError(w, exceptions.NewForbiddenError(exceptions.ForbiddenMessage))
 			return
 		}
-
-		log.Println("token", token)
-
+		
 		//Check if the token is valid
 		if !token.Valid {
 			//If the token is not valid, return an error
