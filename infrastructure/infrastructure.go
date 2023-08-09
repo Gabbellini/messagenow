@@ -109,7 +109,6 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Println(pathTemplate)
 		if pathTemplate == "/api/login" {
 			next.ServeHTTP(w, r)
 			return

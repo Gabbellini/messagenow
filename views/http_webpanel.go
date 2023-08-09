@@ -41,8 +41,6 @@ func (s studentModule) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var f *os.File
 	var err error
 
-	log.Println(r.URL.Path)
-
 	if r.URL.Path == s.Path() || r.URL.Path == s.Path() {
 		f, err = os.Open(indexName)
 		if err != nil {

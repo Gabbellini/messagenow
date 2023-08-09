@@ -2,6 +2,7 @@ package views
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"log"
@@ -188,7 +189,9 @@ func (m messageHttpModule) handleWebSocket(w http.ResponseWriter, r *http.Reques
 	m.addClient(roomID, client)
 	defer m.removeClient(roomID, client)
 
-	log.Println("client Connected", client.Name)
+	log.Println("NEW CIENT CONNECTED:", client.Name)
+	log.Println("ROOM:", roomID)
+	fmt.Printf("%+v\n", rooms[roomID])
 
 	for {
 		// Wait for the JSON message from the client
@@ -241,22 +244,24 @@ func (m messageHttpModule) handleMessage(sender *Client, roomID int64, message C
 func (m messageHttpModule) broadCastMessages() {
 	for {
 		clientMessage := <-broadcast
+
+		err := m.createMessageUseCase.Execute(
+			clientMessage.User.ID,
+			clientMessage.RoomID,
+			entities.Message{Text: clientMessage.Text},
+		)
+		if err != nil {
+			log.Println("[broadCastMessages] Error createMessageUseCase.Execute", err)
+		}
+
 		for addressee := range rooms[clientMessage.RoomID] {
 			addressee.mu.Lock()
 			clientMessage.CreatedAt = time.Now()
-			err := addressee.conn.WriteJSON(clientMessage)
+
+			err = addressee.conn.WriteJSON(clientMessage)
 			addressee.mu.Unlock()
 			if err != nil {
 				log.Println("Error broadcasting message:", err)
-			}
-
-			err = m.createMessageUseCase.Execute(
-				clientMessage.User.ID,
-				clientMessage.RoomID,
-				entities.Message{Text: clientMessage.Text},
-			)
-			if err != nil {
-				log.Println("[broadCastMessages] Error createMessageUseCase.Execute", err)
 			}
 		}
 	}
