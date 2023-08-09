@@ -7,5 +7,5 @@ Webchat developed to improve my skills on real-time protocols, design patterns, 
 - [x] Create chat room;
 - [x] Join chat room;
 - [x] List messages;
-- [ ] Create messages;
-- [ ] Leave chat room;
+- [x] Create messages;
+- [x] Leave chat room;
