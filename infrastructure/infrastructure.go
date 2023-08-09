@@ -62,7 +62,7 @@ func setupModules(router *mux.Router, db *sql.DB) error {
 
 	setupAuthorizationModule(apiRouter, db)
 	setupAPIModule(apiRouter, db)
-	http_pkg.NewPWAWebModule("/static", "./static").Setup(router)
+	http_pkg.NewPWAWebModule("/static/", "./static").Setup(router)
 
 	return nil
 }
@@ -136,7 +136,7 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 			exceptions.HandleError(w, exceptions.NewForbiddenError(exceptions.ForbiddenMessage))
 			return
 		}
-		
+
 		//Check if the token is valid
 		if !token.Valid {
 			//If the token is not valid, return an error

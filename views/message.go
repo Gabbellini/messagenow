@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type messageHttpModule struct {
@@ -146,9 +147,10 @@ type Client struct {
 }
 
 type ClientMessage struct {
-	RoomID   int64  `json:"roomID"`
-	ClientID int64  `json:"id"`
-	Text     string `json:"text"`
+	RoomID    int64         `json:"roomID"`
+	User      entities.User `json:"sender"`
+	Text      string        `json:"text"`
+	CreatedAt time.Time     `json:"createdAt"`
 }
 
 var (
@@ -200,9 +202,9 @@ func (m messageHttpModule) handleWebSocket(w http.ResponseWriter, r *http.Reques
 
 		// handle Message
 		m.handleMessage(client, roomID, ClientMessage{
-			RoomID:   roomID,
-			ClientID: client.ID,
-			Text:     string(message),
+			RoomID: roomID,
+			User:   client.User,
+			Text:   string(message),
 		})
 	}
 }
@@ -230,35 +232,32 @@ func (m messageHttpModule) handleMessage(sender *Client, roomID int64, message C
 	// For simplicity, we just broadcast the message to all connected clients.
 
 	broadcast <- ClientMessage{
-		ClientID: sender.ID,
-		RoomID:   roomID,
-		Text:     message.Text,
+		User:   sender.User,
+		RoomID: roomID,
+		Text:   message.Text,
 	}
 }
 
 func (m messageHttpModule) broadCastMessages() {
 	for {
 		clientMessage := <-broadcast
-		log.Println("clientMessage", clientMessage.Text)
 		for addressee := range rooms[clientMessage.RoomID] {
 			addressee.mu.Lock()
+			clientMessage.CreatedAt = time.Now()
 			err := addressee.conn.WriteJSON(clientMessage)
 			addressee.mu.Unlock()
 			if err != nil {
 				log.Println("Error broadcasting message:", err)
 			}
 
-			log.Println("clientMessage.Text", clientMessage.Text)
-
 			err = m.createMessageUseCase.Execute(
-				clientMessage.ClientID,
+				clientMessage.User.ID,
 				clientMessage.RoomID,
 				entities.Message{Text: clientMessage.Text},
 			)
 			if err != nil {
 				log.Println("[broadCastMessages] Error createMessageUseCase.Execute", err)
 			}
-
 		}
 	}
 }

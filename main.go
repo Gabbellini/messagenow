@@ -39,9 +39,6 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	fs := http.FileServer(http.Dir("static"))
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
-
 	log.Println("[main] Server is running on", serverDomain)
 	log.Fatal(server.ListenAndServe())
 }
