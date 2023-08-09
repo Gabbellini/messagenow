@@ -187,39 +187,46 @@ func (m messageHttpModule) handleWebSocket(w http.ResponseWriter, r *http.Reques
 	client := &Client{conn: conn, User: user}
 
 	m.addClient(roomID, client)
-	defer m.removeClient(roomID, client)
 
-	log.Println("NEW CIENT CONNECTED:", client.Name)
-	log.Println("ROOM:", roomID)
-	fmt.Printf("%+v\n", rooms[roomID])
+	fmt.Println("roomID", roomID)
+	for roomClient, _ := range rooms[roomID] {
+		fmt.Printf("%+v\n", roomClient.User.Name)
+	}
 
 	for {
-		// Wait for the JSON message from the client
 		_, message, err := client.conn.ReadMessage()
 		if err != nil {
 			log.Println("[handleWebSocket] Error ReadJSON", err)
-			return
+			break
 		}
 
-		log.Println(string(message))
-
-		// handle Message
-		m.handleMessage(client, roomID, ClientMessage{
-			RoomID: roomID,
+		broadcast <- ClientMessage{
 			User:   client.User,
+			RoomID: roomID,
 			Text:   string(message),
-		})
+		}
 	}
+
+	m.removeClient(roomID, client)
 }
 
 func (m messageHttpModule) addClient(id int64, client *Client) {
 	client.mu.Lock()
+
+	// create new map of clients in case of the room do not have any client.
 	clients, ok := rooms[id]
 	if !ok {
 		clients = make(map[*Client]bool)
 	}
-	clients[client] = true
+
+	// if the client is not on the room clients map add it
+	_, ok = clients[client]
+	if !ok {
+		clients[client] = true
+	}
+
 	rooms[id] = clients
+
 	client.mu.Unlock()
 }
 
@@ -227,24 +234,14 @@ func (m messageHttpModule) removeClient(id int64, client *Client) {
 	client.mu.Lock()
 	clients := rooms[id]
 	delete(clients, client)
+	rooms[id] = clients
 	client.mu.Unlock()
-}
-
-func (m messageHttpModule) handleMessage(sender *Client, roomID int64, message ClientMessage) {
-	// Process the received message here (e.g., handle commands, etc.)
-	// For simplicity, we just broadcast the message to all connected clients.
-
-	broadcast <- ClientMessage{
-		User:   sender.User,
-		RoomID: roomID,
-		Text:   message.Text,
-	}
 }
 
 func (m messageHttpModule) broadCastMessages() {
 	for {
 		clientMessage := <-broadcast
-
+		fmt.Println("\n\n-----------------------------")
 		err := m.createMessageUseCase.Execute(
 			clientMessage.User.ID,
 			clientMessage.RoomID,
@@ -257,6 +254,8 @@ func (m messageHttpModule) broadCastMessages() {
 		for addressee := range rooms[clientMessage.RoomID] {
 			addressee.mu.Lock()
 			clientMessage.CreatedAt = time.Now()
+
+			fmt.Printf("%+v\n", addressee.User.Name)
 
 			err = addressee.conn.WriteJSON(clientMessage)
 			addressee.mu.Unlock()
