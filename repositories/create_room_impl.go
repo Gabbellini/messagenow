@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"messagenow/domain/entities"
 	"messagenow/exceptions"
 )
 
@@ -18,7 +17,7 @@ func NewCreateRoomRepository(db *sql.DB) CreateRoomRepository {
 	}
 }
 
-func (c createRoomRepositoryImpl) Execute(ctx context.Context) (*entities.Room, error) {
+func (c createRoomRepositoryImpl) Execute(ctx context.Context) (*int64, error) {
 	query := `
 	INSERT INTO room (created_at) VALUES (CURRENT_TIMESTAMP)`
 
@@ -34,5 +33,5 @@ func (c createRoomRepositoryImpl) Execute(ctx context.Context) (*entities.Room, 
 		return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
 	}
 
-	return &entities.Room{ID: id}, nil
+	return &id, nil
 }

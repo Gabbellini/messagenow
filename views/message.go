@@ -49,14 +49,14 @@ func (m messageHttpModule) Setup(router *mux.Router) {
 }
 
 func (m messageHttpModule) createRoom(w http.ResponseWriter, r *http.Request) {
-	room, err := m.createRoomUseCase.Execute(r.Context())
+	roomID, err := m.createRoomUseCase.Execute(r.Context())
 	if err != nil {
 		log.Println("[getPreviousMessages] Error Execute", err)
 		exceptions.HandleError(w, err)
 		return
 	}
 
-	_, err = w.Write([]byte(strconv.FormatInt(room.ID, 10)))
+	_, err = w.Write([]byte(strconv.FormatInt(*roomID, 10)))
 	if err != nil {
 		log.Println("[getPreviousMessages] Error Write", err)
 		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))

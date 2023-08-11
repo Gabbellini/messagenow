@@ -2,9 +2,8 @@ package usecases
 
 import (
 	"context"
-	"messagenow/domain/entities"
 )
 
 type CreateRoomUseCase interface {
-	Execute(ctx context.Context) (*entities.Room, error)
+	Execute(ctx context.Context) (*int64, error)
 }
