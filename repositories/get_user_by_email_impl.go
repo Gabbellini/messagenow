@@ -9,15 +9,15 @@ import (
 	"messagenow/exceptions"
 )
 
-type getUserRepositoryImpl struct {
+type getUserByEmailRepositoryImpl struct {
 	db *sql.DB
 }
 
-func NewGetUserRepository(db *sql.DB) GetUserRepository {
-	return getUserRepositoryImpl{db: db}
+func NewGetUserByEmailRepository(db *sql.DB) GetUserByEmailRepository {
+	return getUserByEmailRepositoryImpl{db: db}
 }
 
-func (g getUserRepositoryImpl) Execute(ctx context.Context, userID int64) (*entities.User, error) {
+func (g getUserByEmailRepositoryImpl) Execute(ctx context.Context, email string) (*entities.User, error) {
 	//language=sql
 	query := `
 	SELECT id, 
@@ -25,10 +25,10 @@ func (g getUserRepositoryImpl) Execute(ctx context.Context, userID int64) (*enti
 	       image, 
 	       email
 	FROM user
-	WHERE id = ?`
+	WHERE email = ?`
 
 	var user entities.User
-	err := g.db.QueryRowContext(ctx, query, userID).Scan(
+	err := g.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Name,
 		&user.ImageURL,
@@ -36,11 +36,10 @@ func (g getUserRepositoryImpl) Execute(ctx context.Context, userID int64) (*enti
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			log.Println("[loginRepositoryImpl] Error sql.ErrNoRows", err)
-			return nil, exceptions.NewBadRequestError("Usuário não encontrado")
+			return nil, nil
 		}
 
-		log.Println("[loginRepositoryImpl] Error Scan", err)
+		log.Println("[getUserByEmailRepositoryImpl] Error Scan", err)
 		return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 

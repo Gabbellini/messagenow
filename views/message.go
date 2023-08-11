@@ -56,7 +56,7 @@ func (m messageHttpModule) createRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = w.Write([]byte(strconv.FormatInt(*roomID, 10)))
+	_, err = w.Write([]byte(strconv.FormatInt(roomID, 10)))
 	if err != nil {
 		log.Println("[getPreviousMessages] Error Write", err)
 		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))

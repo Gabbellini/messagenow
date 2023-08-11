@@ -5,5 +5,5 @@ import (
 )
 
 type CreateRoomRepository interface {
-	Execute(ctx context.Context) (*int64, error)
+	Execute(ctx context.Context) (int64, error)
 }

@@ -17,7 +17,7 @@ func NewLoginRepository(db *sql.DB) LoginRepository {
 	return loginRepositoryImpl{db: db}
 }
 
-func (l loginRepositoryImpl) Execute(ctx context.Context, credential entities.Credential) (*entities.User, error) {
+func (l loginRepositoryImpl) Execute(ctx context.Context, credential entities.Credentials) (*entities.User, error) {
 	//language=sql
 	query := `
 	SELECT id, 

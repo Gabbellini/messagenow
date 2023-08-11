@@ -3,7 +3,7 @@ Real time message
 
 Web-chat developed to improve my skills on real-time protocols, design patterns, clean architecture and help me to develop a livestream.
 
-- [ ] Create user (*name, *email, *password, image);
+- [x] Create user (*name, *email, *password, image);
 - [x] Login;
 - [ ] Create chat room;
 - [x] Join chat room;

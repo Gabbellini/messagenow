@@ -18,7 +18,7 @@ func NewLoginUseCase(loginRepository repositories.LoginRepository) LoginUseCase 
 	return loginUseCaseImpl{loginRepository: loginRepository}
 }
 
-func (l loginUseCaseImpl) Execute(ctx context.Context, credential entities.Credential) (*entities.User, error) {
+func (l loginUseCaseImpl) Execute(ctx context.Context, credential entities.Credentials) (*entities.User, error) {
 	if credential.Email = strings.TrimSpace(credential.Email); credential.Email == "" {
 		return nil, exceptions.NewForbiddenError(exceptions.ForbiddenMessage)
 	}

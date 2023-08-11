@@ -35,7 +35,7 @@ func (m authorizationHttpModule) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var credentials entities.Credential
+	var credentials entities.Credentials
 	if err = json.Unmarshal(b, &credentials); err != nil {
 		log.Println("[login] Error Unmarshal", err)
 		exceptions.HandleError(w, exceptions.NewForbiddenError(exceptions.ForbiddenMessage))

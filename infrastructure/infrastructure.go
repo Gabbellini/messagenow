@@ -74,6 +74,10 @@ func setupAuthorizationModule(router *mux.Router, db *sql.DB) {
 }
 
 func setupAPIModule(router *mux.Router, db *sql.DB) {
+	// Create all repositories instances.
+	createUserRepository := repositories.NewCreateUserRepository(db)
+	getUserByEmailRepository := repositories.NewGetUserByEmailRepository(db)
+	getUserByIDRepository := repositories.NewGetUserByIDRepository(db)
 	createMessageRepository := repositories.NewCreateMessageRepository(db)
 	getMessagesRepository := repositories.NewGetMessagesRepository(db)
 	createRoomRepository := repositories.NewCreateRoomRepository(db)
@@ -81,12 +85,17 @@ func setupAPIModule(router *mux.Router, db *sql.DB) {
 	getRoomRepository := repositories.NewGetRoomRepository(db)
 	joinRoomRepository := repositories.NewJoinRoomRepository(db)
 
+	// Create all use cases instances with their respective repositories dependencies.
+	createUserUseCase := usecases.NewCreateUserUseCase(createUserRepository, getUserByEmailRepository)
+	getUserByIDUseCase := usecases.NewGetUserByIDUseCase(getUserByIDRepository)
 	createRoomUseCase := usecases.NewCreateRoomUseCase(createRoomRepository)
 	joinRoomUseCase := usecases.NewJoinRoomUseCase(joinRoomRepository)
 	createMessageUseCase := usecases.NewCreateMessageUseCase(createMessageRepository, getRoomRepository)
 	getMessagesUseCase := usecases.NewGetMessagesUseCase(getMessagesRepository)
 	getRoomsUseCase := usecases.NewGetRoomsUseCase(getRoomsRepository)
 
+	// Create all http modules instances with their use cases dependencies.
+	http_pkg.NewUserHTTPModule(createUserUseCase, getUserByIDUseCase).Setup(router)
 	http_pkg.NewMessageHTTPModule(
 		createMessageUseCase,
 		getMessagesUseCase,
@@ -95,9 +104,6 @@ func setupAPIModule(router *mux.Router, db *sql.DB) {
 		getRoomsUseCase,
 	).Setup(router)
 
-	loginRepository := repositories.NewGetUserRepository(db)
-	loginUseCase := usecases.NewGetUserUseCase(loginRepository)
-	http_pkg.NewUserHTTPModule(loginUseCase).Setup(router)
 }
 
 func authorizationMiddleware(next http.Handler) http.Handler {
@@ -109,7 +115,7 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if pathTemplate == "/api/login" {
+		if pathTemplate == "/api/login" || pathTemplate == "/api/users" {
 			next.ServeHTTP(w, r)
 			return
 		}

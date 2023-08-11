@@ -1,10 +1,10 @@
-package repositories
+package usecases
 
 import (
 	"context"
 	"messagenow/domain/entities"
 )
 
-type GetUserRepository interface {
+type GetUserByIDUseCase interface {
 	Execute(ctx context.Context, userID int64) (*entities.User, error)
 }

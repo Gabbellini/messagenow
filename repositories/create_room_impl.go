@@ -17,21 +17,21 @@ func NewCreateRoomRepository(db *sql.DB) CreateRoomRepository {
 	}
 }
 
-func (c createRoomRepositoryImpl) Execute(ctx context.Context) (*int64, error) {
+func (c createRoomRepositoryImpl) Execute(ctx context.Context) (int64, error) {
 	query := `
 	INSERT INTO room (created_at) VALUES (CURRENT_TIMESTAMP)`
 
 	result, err := c.db.ExecContext(ctx, query)
 	if err != nil {
 		log.Println("[createRoomRepositoryImpl] createRoom Error Exec", err)
-		return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
+		return 0, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
 		log.Println("[createRoomRepositoryImpl] createRoom Error LastInsertId", err)
-		return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
+		return 0, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 
-	return &id, nil
+	return id, nil
 }

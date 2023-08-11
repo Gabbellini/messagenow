@@ -5,5 +5,5 @@ import (
 )
 
 type CreateRoomUseCase interface {
-	Execute(ctx context.Context) (*int64, error)
+	Execute(ctx context.Context) (int64, error)
 }
