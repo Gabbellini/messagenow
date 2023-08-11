@@ -25,7 +25,7 @@ func (j joinRoomRepositoryImpl) Execute(ctx context.Context, roomID, userID int6
 	_, err := j.db.ExecContext(ctx, query, roomID, userID)
 	if err != nil {
 		log.Println("[joinRoomRepositoryImpl] Error ExecContext", err)
-		return exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+		return exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 
 	return nil

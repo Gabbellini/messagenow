@@ -36,7 +36,7 @@ func (g getMessagesRepositoryImpl) Execute(ctx context.Context, userID, roomID i
 	rows, err := g.db.QueryContext(ctx, query, userID, roomID)
 	if err != nil {
 		log.Println("[getMessagesRepositoryImpl] Error QueryContext", err)
-		return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+		return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 	defer rows.Close()
 
@@ -52,7 +52,7 @@ func (g getMessagesRepositoryImpl) Execute(ctx context.Context, userID, roomID i
 		)
 		if err != nil {
 			log.Println("[getMessagesRepositoryImpl] Error ExecContext", err)
-			return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+			return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 		}
 
 		messages = append(messages, message)

@@ -32,7 +32,7 @@ func (g getRoomsRepositoryImpl) Execute(ctx context.Context, userID int64) ([]en
 	rows, err := g.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		log.Println("[getRoomsRepositoryImpl] Error QueryContext", err)
-		return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+		return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 	defer rows.Close()
 
@@ -46,7 +46,7 @@ func (g getRoomsRepositoryImpl) Execute(ctx context.Context, userID int64) ([]en
 		)
 		if err != nil {
 			log.Println("[getRoomsRepositoryImpl] Error Scan", err)
-			return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+			return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 		}
 
 		room.Users, err = g.getRoomUsers(ctx, room.ID)
@@ -74,7 +74,7 @@ func (g getRoomsRepositoryImpl) getRoomUsers(ctx context.Context, roomID int64) 
 	rows, err := g.db.QueryContext(ctx, query, roomID)
 	if err != nil {
 		log.Println("[getRoomUsers] Error QueryContext", err)
-		return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+		return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 	defer rows.Close()
 
@@ -88,7 +88,7 @@ func (g getRoomsRepositoryImpl) getRoomUsers(ctx context.Context, roomID int64) 
 		)
 		if err != nil {
 			log.Println("[getRoomUsers] Error Scan", err)
-			return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+			return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 		}
 
 		users = append(users, user)

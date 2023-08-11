@@ -38,14 +38,14 @@ func (m userHttpModule) me(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(user)
 	if err != nil {
 		log.Println("[me] Error Marshal", err)
-		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))
+		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
 		return
 	}
 
 	_, err = w.Write(b)
 	if err != nil {
 		log.Println("[me] Error Write", err)
-		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))
+		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
 		return
 	}
 }

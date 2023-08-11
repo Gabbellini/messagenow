@@ -17,7 +17,7 @@ func HandleError(w http.ResponseWriter, err error) {
 		statusCode = http.StatusUnauthorized
 	case ForbiddenError:
 		statusCode = http.StatusForbidden
-	case InternalServerError:
+	case UnexpectedError:
 		statusCode = http.StatusInternalServerError
 	default:
 		statusCode = 500

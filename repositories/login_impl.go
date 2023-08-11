@@ -43,7 +43,7 @@ func (l loginRepositoryImpl) Execute(ctx context.Context, credential entities.Cr
 		}
 
 		log.Println("[loginRepositoryImpl] Error Scan", err)
-		return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+		return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 
 	return &user, err

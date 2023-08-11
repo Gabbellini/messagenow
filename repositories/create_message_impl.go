@@ -24,7 +24,7 @@ func (c createMessageRepository) Execute(roomID, senderID int64, message entitie
 	_, err := c.db.Exec(query, roomID, senderID, message.Text)
 	if err != nil {
 		log.Println("[createMessageRepository] Error Exec", err)
-		return exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+		return exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 
 	return nil

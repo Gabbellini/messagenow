@@ -41,7 +41,7 @@ func (g getUserRepositoryImpl) Execute(ctx context.Context, userID int64) (*enti
 		}
 
 		log.Println("[loginRepositoryImpl] Error Scan", err)
-		return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+		return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 
 	return &user, err

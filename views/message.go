@@ -59,7 +59,7 @@ func (m messageHttpModule) createRoom(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write([]byte(strconv.FormatInt(*roomID, 10)))
 	if err != nil {
 		log.Println("[getPreviousMessages] Error Write", err)
-		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))
+		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
 		return
 	}
 }
@@ -77,14 +77,14 @@ func (m messageHttpModule) getRooms(w http.ResponseWriter, r *http.Request) {
 	b, err := json.Marshal(userRooms)
 	if err != nil {
 		log.Println("[getRooms] Error Marshal", err)
-		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))
+		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
 		return
 	}
 
 	_, err = w.Write(b)
 	if err != nil {
 		log.Println("[getRooms] Error Write", err)
-		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))
+		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
 		return
 	}
 }
@@ -129,14 +129,14 @@ func (m messageHttpModule) getPreviousMessages(w http.ResponseWriter, r *http.Re
 	b, err := json.Marshal(messages)
 	if err != nil {
 		log.Println("[getPreviousMessages] Error Marshal", err)
-		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))
+		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
 		return
 	}
 
 	_, err = w.Write(b)
 	if err != nil {
 		log.Println("[getPreviousMessages] Error Write", err)
-		exceptions.HandleError(w, exceptions.NewInternalServerError(exceptions.InternalErrorMessage))
+		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
 		return
 	}
 }

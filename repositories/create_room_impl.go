@@ -24,13 +24,13 @@ func (c createRoomRepositoryImpl) Execute(ctx context.Context) (*int64, error) {
 	result, err := c.db.ExecContext(ctx, query)
 	if err != nil {
 		log.Println("[createRoomRepositoryImpl] createRoom Error Exec", err)
-		return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+		return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
 		log.Println("[createRoomRepositoryImpl] createRoom Error LastInsertId", err)
-		return nil, exceptions.NewInternalServerError(exceptions.InternalErrorMessage)
+		return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 
 	return &id, nil
