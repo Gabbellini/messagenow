@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.5.0
-	golang.org/x/crypto v0.11.0
+	golang.org/x/crypto v0.12.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
