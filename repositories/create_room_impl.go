@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"messagenow/domain/entities"
 	"messagenow/exceptions"
 )
 
@@ -17,19 +18,20 @@ func NewCreateRoomRepository(db *sql.DB) CreateRoomRepository {
 	}
 }
 
-func (c createRoomRepositoryImpl) Execute(ctx context.Context) (int64, error) {
+func (c createRoomRepositoryImpl) Execute(ctx context.Context, room entities.Room) (int64, error) {
+	//language=sql
 	query := `
-	INSERT INTO room (created_at) VALUES (CURRENT_TIMESTAMP)`
+	INSERT INTO room (type, image) VALUES (?, ?)`
 
-	result, err := c.db.ExecContext(ctx, query)
+	result, err := c.db.ExecContext(ctx, query, room.Type, room.ImageURL)
 	if err != nil {
-		log.Println("[createRoomRepositoryImpl] createRoom Error Exec", err)
+		log.Println("[createRoom] Error ExecContext", err)
 		return 0, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		log.Println("[createRoomRepositoryImpl] createRoom Error LastInsertId", err)
+		log.Println("[createRoom] Error LastInsertId", err)
 		return 0, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
 	}
 

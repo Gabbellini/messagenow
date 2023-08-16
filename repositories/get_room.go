@@ -1,9 +1,10 @@
 package repositories
 
 import (
+	"context"
 	"messagenow/domain/entities"
 )
 
 type GetRoomRepository interface {
-	Execute(roomID int64, senderID int64) (*entities.Room, error)
+	Execute(ctx context.Context, roomID int64, userID int64) (*entities.Room, error)
 }

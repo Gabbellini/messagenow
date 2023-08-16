@@ -59,7 +59,7 @@ func (m userHttpModule) createUser(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("[createUser] Error ReadAll", err)
-		exceptions.HandleError(w, exceptions.NewBadRequestError("Corpo da requisição não é valido"))
+		exceptions.HandleError(w, exceptions.NewBadRequestError("Corpo da requisição não é válido"))
 		return
 	}
 
@@ -67,7 +67,7 @@ func (m userHttpModule) createUser(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(b, &user)
 	if err != nil {
 		log.Println("[createUser] Error Unmarshal", err)
-		exceptions.HandleError(w, exceptions.NewBadRequestError("Corpo da requisição não é valido"))
+		exceptions.HandleError(w, exceptions.NewBadRequestError("Corpo da requisição não é válido"))
 		return
 	}
 

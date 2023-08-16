@@ -83,16 +83,24 @@ func setupAPIModule(router *mux.Router, db *sql.DB) {
 	createRoomRepository := repositories.NewCreateRoomRepository(db)
 	getRoomsRepository := repositories.NewGetRoomsRepository(db)
 	getRoomRepository := repositories.NewGetRoomRepository(db)
+	getRoomUsersRepository := repositories.NewGetRoomUsersRepository(db)
 	joinRoomRepository := repositories.NewJoinRoomRepository(db)
+	setRoomStatusRepository := repositories.NewSetRoomStatusRepository(db)
 
 	// Create all use cases instances with their respective repositories dependencies.
 	createUserUseCase := usecases.NewCreateUserUseCase(createUserRepository, getUserByEmailRepository)
 	getUserByIDUseCase := usecases.NewGetUserByIDUseCase(getUserByIDRepository)
-	createRoomUseCase := usecases.NewCreateRoomUseCase(createRoomRepository)
+	createRoomUseCase := usecases.NewCreateRoomUseCase(createRoomRepository, getRoomRepository)
 	joinRoomUseCase := usecases.NewJoinRoomUseCase(joinRoomRepository)
-	createMessageUseCase := usecases.NewCreateMessageUseCase(createMessageRepository, getRoomRepository)
+	createMessageUseCase := usecases.NewCreateMessageUseCase(createMessageRepository)
 	getMessagesUseCase := usecases.NewGetMessagesUseCase(getMessagesRepository)
 	getRoomsUseCase := usecases.NewGetRoomsUseCase(getRoomsRepository)
+	addUserRoomUseCase := usecases.NewAddUserRoomUseCase(
+		joinRoomRepository,
+		getRoomRepository,
+		getRoomUsersRepository,
+		setRoomStatusRepository,
+	)
 
 	// Create all http modules instances with their use cases dependencies.
 	http_pkg.NewUserHTTPModule(createUserUseCase, getUserByIDUseCase).Setup(router)
@@ -102,6 +110,7 @@ func setupAPIModule(router *mux.Router, db *sql.DB) {
 		createRoomUseCase,
 		joinRoomUseCase,
 		getRoomsUseCase,
+		addUserRoomUseCase,
 	).Setup(router)
 
 }

@@ -21,7 +21,7 @@ func NewGetRoomsRepository(db *sql.DB) GetRoomsRepository {
 func (g getRoomsRepositoryImpl) Execute(ctx context.Context, userID int64) ([]entities.Room, error) {
 	//language=sql
 	query := `
-	SELECT r.id, 
+	SELECT r.id,
 	       r.created_at,
 	       r.modified_at
 	FROM room r
@@ -47,12 +47,6 @@ func (g getRoomsRepositoryImpl) Execute(ctx context.Context, userID int64) ([]en
 		if err != nil {
 			log.Println("[getRoomsRepositoryImpl] Error Scan", err)
 			return nil, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)
-		}
-
-		room.Users, err = g.getRoomUsers(ctx, room.ID)
-		if err != nil {
-			log.Println("[getRoomsRepositoryImpl] Error getRoomUsers", err)
-			return nil, err
 		}
 
 		rooms = append(rooms, room)

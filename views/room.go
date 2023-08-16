@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"io"
 	"log"
 	"messagenow/domain/entities"
 	"messagenow/exceptions"
@@ -16,11 +17,12 @@ import (
 )
 
 type messageHttpModule struct {
-	createMessageUseCase       usecases.CreateMessageUseCase
-	getPreviousMessagesUseCase usecases.GetMessagesUseCase
-	createRoomUseCase          usecases.CreateRoomUseCase
-	joinRoomUseCase            usecases.JoinRoomUseCase
-	getRoomsUseCase            usecases.GetRoomsUseCase
+	createMessageUseCase usecases.CreateMessageUseCase
+	getMessagesUseCase   usecases.GetMessagesUseCase
+	createRoomUseCase    usecases.CreateRoomUseCase
+	joinRoomUseCase      usecases.JoinRoomUseCase
+	getRoomsUseCase      usecases.GetRoomsUseCase
+	addUserRoomUseCase   usecases.AddUserRoomUseCase
 }
 
 func NewMessageHTTPModule(
@@ -29,13 +31,15 @@ func NewMessageHTTPModule(
 	createRoomUseCase usecases.CreateRoomUseCase,
 	joinRoomUseCase usecases.JoinRoomUseCase,
 	getRoomsUseCase usecases.GetRoomsUseCase,
+	addUserRoomUseCase usecases.AddUserRoomUseCase,
 ) ModuleHTTP {
 	return messageHttpModule{
-		createMessageUseCase:       createTextMessageUseCase,
-		getPreviousMessagesUseCase: getPreviousMessagesUseCase,
-		createRoomUseCase:          createRoomUseCase,
-		joinRoomUseCase:            joinRoomUseCase,
-		getRoomsUseCase:            getRoomsUseCase,
+		createMessageUseCase: createTextMessageUseCase,
+		getMessagesUseCase:   getPreviousMessagesUseCase,
+		createRoomUseCase:    createRoomUseCase,
+		joinRoomUseCase:      joinRoomUseCase,
+		getRoomsUseCase:      getRoomsUseCase,
+		addUserRoomUseCase:   addUserRoomUseCase,
 	}
 }
 
@@ -43,22 +47,38 @@ func (m messageHttpModule) Setup(router *mux.Router) {
 	router.HandleFunc("/rooms", m.createRoom).Methods(http.MethodPost)
 	router.HandleFunc("/rooms", m.getRooms).Methods(http.MethodGet)
 	router.HandleFunc("/rooms/{roomID}/join", m.joinRoom).Methods(http.MethodPost)
-	router.HandleFunc("/rooms/{roomID}/messages", m.getPreviousMessages).Methods(http.MethodGet)
+	router.HandleFunc("/rooms/{roomID}/userID/{userID}", m.addRoomUser).Methods(http.MethodPost)
+	router.HandleFunc("/rooms/{roomID}/messages", m.getMessages).Methods(http.MethodGet)
 	router.HandleFunc("/rooms/{roomID}/ws", m.handleWebSocket)
 	go m.broadCastMessages()
 }
 
 func (m messageHttpModule) createRoom(w http.ResponseWriter, r *http.Request) {
-	roomID, err := m.createRoomUseCase.Execute(r.Context())
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Println("[getPreviousMessages] Error Execute", err)
+		log.Println("[createRoom] Error ReadAll", err)
+		exceptions.HandleError(w, exceptions.NewBadRequestError("Corpo da requisição não é válido"))
+		return
+	}
+
+	var room entities.Room
+	err = json.Unmarshal(b, &room)
+	if err != nil {
+		log.Println("[createRoom] Error Unmarshal", err)
+		exceptions.HandleError(w, exceptions.NewBadRequestError("Corpo da requisição não é válido"))
+		return
+	}
+
+	roomID, err := m.createRoomUseCase.Execute(r.Context(), room)
+	if err != nil {
+		log.Println("[createRoom] Error Execute", err)
 		exceptions.HandleError(w, err)
 		return
 	}
 
 	_, err = w.Write([]byte(strconv.FormatInt(roomID, 10)))
 	if err != nil {
-		log.Println("[getPreviousMessages] Error Write", err)
+		log.Println("[createRoom] Error Write", err)
 		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
 		return
 	}
@@ -89,6 +109,34 @@ func (m messageHttpModule) getRooms(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (m messageHttpModule) addRoomUser(w http.ResponseWriter, r *http.Request) {
+	roomID, err := strconv.ParseInt(mux.Vars(r)["roomID"], 10, 64)
+	if err != nil {
+		log.Println("[addRoomUser] Error ParseInt", err)
+		exceptions.HandleError(w, exceptions.NewBadRequestError("roomID is not valid"))
+		return
+	}
+
+	userID, err := strconv.ParseInt(mux.Vars(r)["userID"], 10, 64)
+	if err != nil {
+		log.Println("[addRoomUser] Error ParseInt", err)
+		exceptions.HandleError(w, exceptions.NewBadRequestError("userID is not valid"))
+		return
+	}
+
+	ctx := r.Context()
+	user := ctx.Value("user").(entities.User)
+
+	err = m.addUserRoomUseCase.Execute(ctx, user, roomID, userID)
+	if err != nil {
+		log.Println("[addRoomUser] Error Execute", err)
+		exceptions.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (m messageHttpModule) joinRoom(w http.ResponseWriter, r *http.Request) {
 	roomID, err := strconv.ParseInt(mux.Vars(r)["roomID"], 10, 64)
 	if err != nil {
@@ -109,33 +157,33 @@ func (m messageHttpModule) joinRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (m messageHttpModule) getPreviousMessages(w http.ResponseWriter, r *http.Request) {
+func (m messageHttpModule) getMessages(w http.ResponseWriter, r *http.Request) {
 	roomID, err := strconv.ParseInt(mux.Vars(r)["roomID"], 10, 64)
 	if err != nil {
-		log.Println("[getPreviousMessages] Error ParseInt", err)
+		log.Println("[getMessages] Error ParseInt", err)
 		exceptions.HandleError(w, exceptions.NewBadRequestError("roomID is not valid"))
 		return
 	}
 
 	ctx := r.Context()
 	user := ctx.Value("user").(entities.User)
-	messages, err := m.getPreviousMessagesUseCase.Execute(ctx, user.ID, roomID)
+	messages, err := m.getMessagesUseCase.Execute(ctx, user.ID, roomID)
 	if err != nil {
-		log.Println("[getPreviousMessages] Error Execute", err)
+		log.Println("[getMessages] Error Execute", err)
 		exceptions.HandleError(w, err)
 		return
 	}
 
 	b, err := json.Marshal(messages)
 	if err != nil {
-		log.Println("[getPreviousMessages] Error Marshal", err)
+		log.Println("[getMessages] Error Marshal", err)
 		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
 		return
 	}
 
 	_, err = w.Write(b)
 	if err != nil {
-		log.Println("[getPreviousMessages] Error Write", err)
+		log.Println("[getMessages] Error Write", err)
 		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
 		return
 	}

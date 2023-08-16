@@ -18,14 +18,3 @@ CREATE TABLE IF NOT EXISTS user
     FOREIGN KEY (status) REFERENCES user_status (id),
     UNIQUE (email)
 );
-
-INSERT INTO user_status (code, text)
-VALUES (1, 'OK');
-
-INSERT INTO user (name, image, email, password)
-VALUES ('GABRIEL DE BRITO BELLINI', NULL, 'gabrielbritobellini@gmail.com',
-        '$2a$10$GeqS9DRDEU.UXmEfRtm8vO5fgddOVvvugXbJL0G0kAnBQ/ehtHoFq');
-
-INSERT INTO user (name, image, email, password)
-VALUES ('GREGORI SABEL', NULL, 'seriosabel@gmail.com',
-        '$2a$10$GeqS9DRDEU.UXmEfRtm8vO5fgddOVvvugXbJL0G0kAnBQ/ehtHoFq');
