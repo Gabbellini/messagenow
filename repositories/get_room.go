@@ -6,5 +6,5 @@ import (
 )
 
 type GetRoomRepository interface {
-	Execute(ctx context.Context, roomID int64, userID int64) (*entities.Room, error)
+	Execute(ctx context.Context, userID int64, roomID int64) (*entities.Room, error)
 }

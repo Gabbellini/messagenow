@@ -6,5 +6,5 @@ import (
 )
 
 type CreateRoomUseCase interface {
-	Execute(ctx context.Context, room entities.Room) (int64, error)
+	Execute(ctx context.Context, user entities.User, room entities.Room) (*entities.Room, error)
 }

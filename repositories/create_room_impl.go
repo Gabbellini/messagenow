@@ -21,9 +21,9 @@ func NewCreateRoomRepository(db *sql.DB) CreateRoomRepository {
 func (c createRoomRepositoryImpl) Execute(ctx context.Context, room entities.Room) (int64, error) {
 	//language=sql
 	query := `
-	INSERT INTO room (type, image) VALUES (?, ?)`
+	INSERT INTO room (name, image) VALUES (?, ?)`
 
-	result, err := c.db.ExecContext(ctx, query, room.Type, room.ImageURL)
+	result, err := c.db.ExecContext(ctx, query, room.Name, room.ImageURL)
 	if err != nil {
 		log.Println("[createRoom] Error ExecContext", err)
 		return 0, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage)

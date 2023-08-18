@@ -30,7 +30,7 @@ func NewAddUserRoomUseCase(
 }
 
 func (a addUserRoomUseCaseImpl) Execute(ctx context.Context, user entities.User, roomID, userID int64) error {
-	room, err := a.getRoomRepository.Execute(ctx, roomID, user.ID)
+	room, err := a.getRoomRepository.Execute(ctx, user.ID, roomID)
 	if err != nil {
 		log.Println("[addUserRoomUseCaseImpl] Error getRoomRepository", err)
 		return err

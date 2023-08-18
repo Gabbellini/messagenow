@@ -18,7 +18,7 @@ func NewGetRoomRepository(db *sql.DB) GetRoomRepository {
 	}
 }
 
-func (g getRoomRepositoryImpl) Execute(ctx context.Context, roomID int64, userID int64) (*entities.Room, error) {
+func (g getRoomRepositoryImpl) Execute(ctx context.Context, userID int64, roomID int64) (*entities.Room, error) {
 	//language=sql
 	query := `
 	SELECT r.id,
@@ -30,7 +30,7 @@ func (g getRoomRepositoryImpl) Execute(ctx context.Context, roomID int64, userID
     WHERE r.id = ?`
 
 	var room entities.Room
-	err := g.db.QueryRowContext(ctx, query, roomID, userID).Scan(&room.ID)
+	err := g.db.QueryRowContext(ctx, query, roomID, userID).Scan(&room.ID, &room.ImageURL, &room.CreatedAt)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		log.Println("[getRoomRepositoryImpl] Error Scan", err)
 		return nil, err

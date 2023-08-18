@@ -69,14 +69,23 @@ func (m messageHttpModule) createRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roomID, err := m.createRoomUseCase.Execute(r.Context(), room)
+	ctx := r.Context()
+	user := ctx.Value("user").(entities.User)
+	newRoom, err := m.createRoomUseCase.Execute(ctx, user, room)
 	if err != nil {
 		log.Println("[createRoom] Error Execute", err)
 		exceptions.HandleError(w, err)
 		return
 	}
 
-	_, err = w.Write([]byte(strconv.FormatInt(roomID, 10)))
+	b, err = json.Marshal(newRoom)
+	if err != nil {
+		log.Println("[createRoom] Error Marshal", err)
+		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))
+		return
+	}
+
+	_, err = w.Write(b)
 	if err != nil {
 		log.Println("[createRoom] Error Write", err)
 		exceptions.HandleError(w, exceptions.NewUnexpectedError(exceptions.UnexpectedErrorMessage))

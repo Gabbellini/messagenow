@@ -1,26 +1,17 @@
 CREATE TABLE IF NOT EXISTS room
 (
-    id          INT      NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id          INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     image       TEXT,
-    type        INT      NOT NULL,
-    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    status      INT               DEFAULT 2 NOT NULL,
-    FOREIGN KEY (type) REFERENCES room_type (id),
-    FOREIGN KEY (status) REFERENCES room_status(id)
-);
-
-CREATE TABLE IF NOT EXISTS room_type
-(
-    id   INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    code TINYINT     NOT NULL DEFAULT 0,
-    text VARCHAR(50) NOT NULL
+    name        VARCHAR(100) NOT NULL,
+    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modified_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    status      INT                   DEFAULT 2 NOT NULL,
+    FOREIGN KEY (status) REFERENCES room_status (id)
 );
 
 CREATE TABLE IF NOT EXISTS room_status
 (
     id   INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
     code TINYINT     NOT NULL DEFAULT 0,
-    text VARCHAR(50) NOT NULL,
+    text VARCHAR(50) NOT NULL
 );
-
