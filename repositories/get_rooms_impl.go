@@ -22,6 +22,7 @@ func (g getRoomsRepositoryImpl) Execute(ctx context.Context, userID int64) ([]en
 	//language=sql
 	query := `
 	SELECT r.id,
+	       r.name,
 	       r.image,
 	       r.created_at,
 	       r.modified_at
@@ -42,6 +43,7 @@ func (g getRoomsRepositoryImpl) Execute(ctx context.Context, userID int64) ([]en
 		var room entities.Room
 		err = rows.Scan(
 			&room.ID,
+			&room.Name,
 			&room.ImageURL,
 			&room.CreatedAt,
 			&room.ModifiedAt,
